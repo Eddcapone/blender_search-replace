@@ -223,7 +223,7 @@ class ReplaceSelectedObjects(bpy.types.Operator):
                                     old_sy = ob.scale.y
                                     old_sz = ob.scale.z
                                 except:
-                                    print("ERROR #3 - please report this to: eduard_fekete@yahoo.de")
+                                    print("ERROR #3")
                                 
                                 if wm.copy_rotation:                              
                                     try:
@@ -239,7 +239,7 @@ class ReplaceSelectedObjects(bpy.types.Operator):
                                         sz = selected_objects[7+x]
                                         rmode = selected_objects[8+x]
                                     except:
-                                        print("ERROR #2 - please report this to: eduard_fekete@yahoo.de")
+                                        print("ERROR #2")
       
                                     try:    
                                     #set new rotation values. Take values from the object which will be replaced.
@@ -267,7 +267,7 @@ class ReplaceSelectedObjects(bpy.types.Operator):
                                         ob.scale.y = sy
                                         ob.scale.z = sz
                                     except:
-                                        print("ERROR #4 - please report this to: eduard_fekete@yahoo.de")
+                                        print("ERROR #4")
                                     
                                     #create a copy from the new object        
                                     bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'}, TRANSFORM_OT_translate={"value":(0, 0, 0), "constraint_axis":(False, False, False), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
@@ -300,7 +300,7 @@ class ReplaceSelectedObjects(bpy.types.Operator):
                                             ob.scale.y = old_sy
                                             ob.scale.z = old_sz
                                     except:
-                                        print("Error #5 - please report this to: eduard_fekete@yahoo.de")
+                                        print("Error #5")
                                         
                                     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
                                     i = i+1                                              
@@ -334,7 +334,7 @@ class ReplaceSelectedObjects(bpy.types.Operator):
                                         ob.rotation_euler.y = old_ry
                                         ob.rotation_euler.z = old_rz
         except:             
-            print("ERROR #1 - please report this to: eduard_fekete@yahoo.de")
+            print("ERROR #1")
             
     #delete replaced objects
         if replaced == 1:
@@ -501,7 +501,7 @@ class SelectRandomMaterials(bpy.types.Operator):
                     
                     random_nr = zahl = random.randint(0,max-1)
                     
-                    if len(obj.material_slots) > i:     # verhindert das Material Slots erstellt werden die nicht benötigt werden
+                    if len(obj.material_slots) > i:     # verhindert das Material Slots erstellt werden die nicht benÃ¶tigt werden
                         obj.active_material_index = i
                     
                     if str(bpy.data.materials[random_nr])[23:-3] != "Material":
