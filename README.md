@@ -48,14 +48,14 @@ Always Deselect: Deselect all objects before selecting an object from the list, 
 Replace Objects Demonstration: (click here if the video controls do not embed, for you.)
 
 - Replace Objects Demonstration Video
-[![Watch the video](https://img.youtube.com/vi/GF-9bIw-EG4&/maxresdefault.jpg)](https://youtu.be/GF-9bIw-EG4)
+[![Watch the video](https://img.youtube.com/vi/GF-9bIw-EG4/maxresdefault.jpg)](https://youtu.be/GF-9bIw-EG4)
 
 ### Assign Functions
 Assing Materials: If you select on ore more objects and don't select a search material, then you are able to assing the material which you selected on "replace material" to the objects.
 
 
 - Assing Materials demonstration Video
-[![Watch the video](https://img.youtube.com/vi/PqaX9SbwC5c&/maxresdefault.jpg)](https://youtu.be/PqaX9SbwC5c)
+[![Watch the video](https://img.youtube.com/vi/PqaX9SbwC5c/maxresdefault.jpg)](https://youtu.be/PqaX9SbwC5c)
 
 ### Info
 - You have to press one of the refresh buttons everytime you add/remove/assign/de-assign a material/texture/object to update the list. It's not important which refresh button you press, since all refresh buttons are pointing at the same refresh method.
@@ -69,13 +69,13 @@ HowTo:
 2. Now just select all the objects you want to change, and press the "Random" Button
 
 - Assing Random Materials demonstration Video
-[![Watch the video](https://img.youtube.com/vi/IORkjg7l_E8&/maxresdefault.jpg)](https://youtu.be/IORkjg7l_E8)
+[![Watch the video](https://img.youtube.com/vi/IORkjg7l_E8/maxresdefault.jpg)](https://youtu.be/IORkjg7l_E8)
 
 ### Advice
 If you are just interested in the object replace function and don't need the material / texture replacement, then click here to download only this function.
 
 - Menu: Search-Objects demonstration Video
-[![Watch the video](https://img.youtube.com/vi/Atcw-pv1g1M&/maxresdefault.jpg)](https://youtu.be/Atcw-pv1g1M)
+[![Watch the video](https://img.youtube.com/vi/Atcw-pv1g1M/maxresdefault.jpg)](https://youtu.be/Atcw-pv1g1M)
 
 ### Changelog
 - v1.44 Eduardf
