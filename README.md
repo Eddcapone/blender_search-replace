@@ -1,6 +1,8 @@
 # blender_search-replace
 This Add-On provides a simple search/replace menu for use in the 3D view tools sidebar (under the register "Tools"). Allows users to search for all objects from the scene and replace them or filter them by material/texture and also to replace the material/texture very fast.
 
+![grafik](https://github.com/Eddcapone/blender_search-replace/assets/16349349/8f3a434a-486c-414e-af00-0a34e42466b8)
+
 <h1>Installation</h1>
 
 <ul>
