@@ -14,7 +14,7 @@ A Blender extension that provides one panel to search and replace **objects**,
   active material's Image Texture node, and replace that image everywhere
   it's found.
 
-![grafik](https://github.com/Eddcapone/blender_search-replace/assets/16349349/2760d81b-9020-4221-a9fa-22686a2088b5)
+<img width="3834" height="2083" alt="grafik" src="https://github.com/user-attachments/assets/9099dd5b-9a14-43b9-ab2f-931b9d863970" />
 
 ## Compatibility
 
