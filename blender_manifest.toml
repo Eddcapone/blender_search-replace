@@ -1,0 +1,16 @@
+schema_version = "1.0.0"
+
+id = "search_and_replace"
+version = "3.0.0"
+name = "Search & Replace"
+tagline = "Search and replace objects, materials, and textures in one panel"
+maintainer = "Eduard Fekete <eduard.fekete@outlook.de>"
+type = "add-on"
+website = "https://github.com/Eddcapone/blender_search-replace"
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-2.0-or-later",
+]
+
+tags = ["3D View"]
