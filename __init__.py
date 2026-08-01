@@ -180,68 +180,11 @@ def update_obj_search_index(self, context):
         jump_to_object(context, ob)
 
 
-def get_selected_objects(scene):
-    result = []
-    for obj in scene.objects:
-        if obj.select_get():
-            result.append(obj.name)
-            rmode = obj.rotation_mode
-
-            if rmode == "QUATERNION":
-                result.append(obj.rotation_quaternion.w)
-                result.append(obj.rotation_quaternion.x)
-                result.append(obj.rotation_quaternion.y)
-                result.append(obj.rotation_quaternion.z)
-            elif rmode == "AXIS_ANGLE":
-                result.append(obj.rotation_axis_angle[0])
-                result.append(obj.rotation_axis_angle[1])
-                result.append(obj.rotation_axis_angle[2])
-                result.append(obj.rotation_axis_angle[3])
-            else:
-                result.append(0.0)
-                result.append(obj.rotation_euler.x)
-                result.append(obj.rotation_euler.y)
-                result.append(obj.rotation_euler.z)
-
-            result.append(obj.scale.x)
-            result.append(obj.scale.y)
-            result.append(obj.scale.z)
-            result.append(rmode)
-
-    return result
-
-
-class RotationScaleSnapshot:
-    """Plain data holder for an object's rotation/scale snapshot (not a bpy type)."""
-
-    def __init__(self, obj):
-        self.old_rotation_mode = obj.rotation_mode
-
-        if obj.rotation_mode == "QUATERNION":
-            self.old_rw = obj.rotation_quaternion.w
-            self.old_rx = obj.rotation_quaternion.x
-            self.old_ry = obj.rotation_quaternion.y
-            self.old_rz = obj.rotation_quaternion.z
-        elif obj.rotation_mode == "AXIS_ANGLE":
-            self.old_rw = obj.rotation_axis_angle[0]
-            self.old_rx = obj.rotation_axis_angle[1]
-            self.old_ry = obj.rotation_axis_angle[2]
-            self.old_rz = obj.rotation_axis_angle[3]
-        else:
-            self.old_rw = 0
-            self.old_rx = obj.rotation_euler.x
-            self.old_ry = obj.rotation_euler.y
-            self.old_rz = obj.rotation_euler.z
-
-        self.old_sx = obj.scale.x
-        self.old_sy = obj.scale.y
-        self.old_sz = obj.scale.z
-
-
 class VIEW3D_OT_replace_selected_objects(bpy.types.Operator):
     """Replace all selected objects with the object chosen from the drop-down menu"""
     bl_idname = "replace_selected.objects"
     bl_label = "Replace"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scene = context.scene
@@ -250,120 +193,53 @@ class VIEW3D_OT_replace_selected_objects(bpy.types.Operator):
         if props.srch_replace == "":
             return {'CANCELLED'}
 
-        selected_objects = get_selected_objects(scene)
+        replace_obj = scene.objects.get(props.srch_replace)
+        if replace_obj is None:
+            return {'CANCELLED'}
 
-        i = 0
-        replaced = 0
-        old_cursor = scene.cursor.location.copy()
+        selected = [obj for obj in context.selected_objects if obj.name != replace_obj.name]
+        if not selected:
+            return {'CANCELLED'}
 
-        try:
-            for obj in scene.objects:
-                if obj.name in selected_objects and props.srch_replace != obj.name:
-                    scene.cursor.location = obj.location.copy()
+        # Build full independent copies via bpy.data directly (no bpy.ops.object.duplicate_move
+        # / snap_selected_to_cursor / object.delete chain) so the whole replace happens as a
+        # single undo step. Chaining several bpy.ops calls here used to push one undo step per
+        # sub-operator, which could corrupt the depsgraph on Ctrl+Z and crash Blender.
+        new_objects = []
+        for obj in selected:
+            new_obj = replace_obj.copy()
+            if replace_obj.data is not None:
+                new_obj.data = replace_obj.data.copy()
+            new_obj.location = obj.location.copy()
 
-                    replace_obj = scene.objects[props.srch_replace]
+            if props.copy_rotation:
+                new_obj.rotation_mode = obj.rotation_mode
+                if obj.rotation_mode == 'QUATERNION':
+                    new_obj.rotation_quaternion = obj.rotation_quaternion.copy()
+                elif obj.rotation_mode == 'AXIS_ANGLE':
+                    new_obj.rotation_axis_angle = obj.rotation_axis_angle[:]
+                else:
+                    new_obj.rotation_euler = obj.rotation_euler.copy()
+                new_obj.scale = obj.scale.copy()
+            # else: keep replace_obj's own rotation/scale, already carried over by .copy()
 
-                    for o in scene.objects:
-                        o.select_set(False)
-                    replace_obj.select_set(True)
-                    context.view_layer.objects.active = replace_obj
+            target_collections = obj.users_collection or (scene.collection,)
+            for coll in target_collections:
+                coll.objects.link(new_obj)
 
-                    snapshot = RotationScaleSnapshot(replace_obj)
+            new_objects.append(new_obj)
 
-                    if props.copy_rotation:
-                        x = i * 9
-                        rw = selected_objects[1 + x]
-                        rx = selected_objects[2 + x]
-                        ry = selected_objects[3 + x]
-                        rz = selected_objects[4 + x]
-                        sx = selected_objects[5 + x]
-                        sy = selected_objects[6 + x]
-                        sz = selected_objects[7 + x]
-                        rmode = selected_objects[8 + x]
+        for obj in selected:
+            bpy.data.objects.remove(obj, do_unlink=True)
 
-                        self.set_rotation(replace_obj, rw, rx, ry, rz, rmode)
-                        replace_obj.scale.x = sx
-                        replace_obj.scale.y = sy
-                        replace_obj.scale.z = sz
-
-                        self.duplicate()
-                        replaced = 1
-                        self.restore(replace_obj, snapshot)
-
-                        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
-                        i += 1
-                    else:
-                        replace_obj.rotation_mode = "XYZ"
-                        replace_obj.rotation_euler.x = 0
-                        replace_obj.rotation_euler.y = 0
-                        replace_obj.rotation_euler.z = 0
-
-                        self.duplicate()
-                        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
-                        replaced = 1
-                        self.restore(replace_obj, snapshot)
-        except Exception as e:
-            print(f"Error in ReplaceSelectedObjects: {e}")
-            scene.cursor.location = old_cursor
-
-        if replaced == 1:
-            for obj in scene.objects:
-                if props.srch_replace != "" and props.srch_replace != obj.name:
-                    if obj.name in selected_objects:
-                        for o in scene.objects:
-                            o.select_set(False)
-                        obj.select_set(True)
-                        context.view_layer.objects.active = obj
-                        bpy.ops.object.delete(use_global=False)
+        for o in scene.objects:
+            o.select_set(False)
+        for new_obj in new_objects:
+            new_obj.select_set(True)
+        context.view_layer.objects.active = new_objects[-1]
 
         update_objects(props, context)
-        scene.cursor.location = old_cursor
         return {'FINISHED'}
-
-    def restore(self, obj, snap):
-        if snap.old_rotation_mode == "QUATERNION":
-            obj.rotation_mode = snap.old_rotation_mode
-            obj.rotation_quaternion.w = snap.old_rw
-            obj.rotation_quaternion.x = snap.old_rx
-            obj.rotation_quaternion.y = snap.old_ry
-            obj.rotation_quaternion.z = snap.old_rz
-        elif snap.old_rotation_mode == "AXIS_ANGLE":
-            obj.rotation_axis_angle[0] = snap.old_rw
-            obj.rotation_axis_angle[1] = snap.old_rx
-            obj.rotation_axis_angle[2] = snap.old_ry
-            obj.rotation_axis_angle[3] = snap.old_rz
-        else:
-            obj.rotation_mode = snap.old_rotation_mode
-            obj.rotation_euler.x = snap.old_rx
-            obj.rotation_euler.y = snap.old_ry
-            obj.rotation_euler.z = snap.old_rz
-
-        obj.scale.x = snap.old_sx
-        obj.scale.y = snap.old_sy
-        obj.scale.z = snap.old_sz
-
-    def set_rotation(self, ob, rw, rx, ry, rz, rmode):
-        if rmode == "QUATERNION":
-            ob.rotation_mode = rmode
-            ob.rotation_quaternion = (rw, rx, ry, rz)
-        elif rmode == "AXIS_ANGLE":
-            ob.rotation_mode = rmode
-            ob.rotation_axis_angle = (rw, rx, ry, rz)
-        else:
-            ob.rotation_mode = rmode
-            ob.rotation_euler = (rx, ry, rz)
-
-    def duplicate(self):
-        bpy.ops.object.duplicate_move(
-            OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'},
-            TRANSFORM_OT_translate={
-                "value": (0, 0, 0), "constraint_axis": (False, False, False),
-                "mirror": False, "proportional_edit_falloff": 'SMOOTH',
-                "proportional_size": 1, "snap": False, "snap_target": 'CLOSEST',
-                "snap_point": (0, 0, 0), "snap_align": False, "snap_normal": (0, 0, 0),
-                "texture_space": False, "remove_on_cancel": False, "release_confirm": False,
-            },
-        )
 
 
 #
@@ -427,6 +303,7 @@ class VIEW3D_OT_replace_all_materials(bpy.types.Operator):
     """Replace the searched material with the chosen replacement on all matched objects"""
     bl_idname = "replace_all.materials"
     bl_label = "Replace"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -453,6 +330,7 @@ class VIEW3D_OT_random_materials(bpy.types.Operator):
     """Assign a random existing material to each material slot of the selected objects"""
     bl_idname = "random.materials"
     bl_label = "Random"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         materials = list(bpy.data.materials)
@@ -538,6 +416,7 @@ class VIEW3D_OT_replace_all_textures(bpy.types.Operator):
     """Replace the searched texture image with the chosen replacement on all matched objects"""
     bl_idname = "replace_all.textures"
     bl_label = "Replace"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
